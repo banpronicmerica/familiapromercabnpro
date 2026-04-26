@@ -1,56 +1,25 @@
 <?php
-// ===== bot.php =====
-include("settings.php");
 
-$content = file_get_contents("php://input");
-$update = json_decode($content, true);
+$TOKEN = "7865316021:AAHzA3NY8JU8VqknceAY_wop4nDg4z9QGqw";
 
-if (isset($update['callback_query'])) {
-    $data = $update['callback_query']['data']; // Ej: "SMS|usuario123"
-    $chat_id = $update['callback_query']['message']['chat']['id'];
-    $callback_id = $update['callback_query']['id'];
+$input = file_get_contents("php://input");
+$data = json_decode($input, true);
 
-    if (strpos($data, '|') !== false) {
-        list($comando, $usuario) = explode('|', $data);
+// Guardar log (para verificar que llega algo)
+file_put_contents("log.txt", $input . PHP_EOL, FILE_APPEND);
 
-        if (!file_exists("acciones")) {
-            mkdir("acciones", 0777, true);
-        }
+if(isset($data["message"])) {
+    $chat_id = $data["message"]["chat"]["id"];
+    $text = $data["message"]["text"];
 
-        $archivo = "acciones/$usuario.txt";
+    $url = "https://api.telegram.org/bot$TOKEN/sendMessage";
 
-        switch ($comando) {
-            case "SMS":
-                file_put_contents($archivo, "/SMS");
-                break;
-            case "SMSERROR":
-                file_put_contents($archivo, "/SMSERROR");
-                break;
-            case "NUMERO":
-                file_put_contents($archivo, "/NUMERO");
-                break;
-            case "ERROR":
-                file_put_contents($archivo, "/ERROR");
-                break;
-            case "LOGIN":
-                file_put_contents($archivo, "/LOGIN");
-                break;
-            case "LOGINERROR":
-                file_put_contents($archivo, "/LOGINERROR");
-                break;
-            case "CARD":
-                file_put_contents($archivo, "/CARD");
-                break;
-            default:
-                file_put_contents($archivo, "/ERROR");
-                break;
-        }
+    $params = [
+        "chat_id" => $chat_id,
+        "text" => "Recibí: " . $text
+    ];
 
-        file_get_contents("https://api.telegram.org/bot$token/answerCallbackQuery?" . http_build_query([
-            'callback_query_id' => $callback_id,
-            'text' => "✅ Acción enviada para $usuario",
-            'show_alert' => false
-        ]));
-    }
+    file_get_contents($url . "?" . http_build_query($params));
 }
-?>
+
+http_response_code(200);
